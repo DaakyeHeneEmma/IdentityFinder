@@ -28,16 +28,25 @@ const SelectGroupOne: React.FC = () => {
           }`}
         >
           <option value="" disabled className="text-body dark:text-bodydark">
-            Select your subject
+            Select your Identification Type
           </option>
           <option value="USA" className="text-body dark:text-bodydark">
-            USA
+            Passport
           </option>
           <option value="UK" className="text-body dark:text-bodydark">
-            UK
+            Ecowas Card(Ghana Card)
           </option>
           <option value="Canada" className="text-body dark:text-bodydark">
-            Canada
+            Student ID
+          </option>
+          <option value="Canada" className="text-body dark:text-bodydark">
+            Health Insurance
+          </option>
+          <option value="Canada" className="text-body dark:text-bodydark">
+            Business Card
+          </option>
+          <option value="Canada" className="text-body dark:text-bodydark">
+            Ohter
           </option>
         </select>
 

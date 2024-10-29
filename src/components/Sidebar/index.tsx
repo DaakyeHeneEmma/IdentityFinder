@@ -102,12 +102,12 @@ const menuGroups = [
             />
           </svg>
         ),
-        label: "Forms",
-        route: "#",
-        children: [
-          { label: "Form Elements", route: "/forms/form-elements" },
-          { label: "Form Layout", route: "/forms/form-layout" },
-        ],
+        label: "Report Card",
+        route: "/forms/reportCardForm",
+        // children: [
+        //   { label: "Form Elements", route: "/forms/form-elements" },
+        //   { label: "Form Layout", route: "/forms/form-layout" },
+        // ],
       },
       {
         icon: (
