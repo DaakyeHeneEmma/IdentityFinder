@@ -66,6 +66,8 @@ const Header = (props: {
           </Link>
         </div>
 
+
+      {/* Search */}
         <div className="hidden sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
