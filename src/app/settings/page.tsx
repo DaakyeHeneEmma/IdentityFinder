@@ -2,6 +2,7 @@ import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Next.js Settings | TailAdmin - Next.js Dashboard Template",
@@ -132,22 +133,6 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  <div className="mb-5.5">
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="Username"
-                    >
-                      Username
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray px-4.5 py-3 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                      type="text"
-                      name="Username"
-                      id="Username"
-                      placeholder="devidjhon24"
-                      defaultValue="devidjhon24"
-                    />
-                  </div>
 
                   <div className="mb-5.5">
                     <label
@@ -210,7 +195,9 @@ const Settings = () => {
                       className="flex justify-center rounded bg-primary px-6 py-2 font-medium text-gray hover:bg-opacity-90"
                       type="submit"
                     >
-                      Save
+                      <Link href={'/profile'} passHref>
+                        Update
+                      </Link>
                     </button>
                   </div>
                 </form>
@@ -238,14 +225,6 @@ const Settings = () => {
                     <div>
                       <span className="mb-1.5 text-black dark:text-white">
                         Edit your photo
-                      </span>
-                      <span className="flex gap-2.5">
-                        <button className="text-sm hover:text-primary">
-                          Delete
-                        </button>
-                        <button className="text-sm hover:text-primary">
-                          Update
-                        </button>
                       </span>
                     </div>
                   </div>

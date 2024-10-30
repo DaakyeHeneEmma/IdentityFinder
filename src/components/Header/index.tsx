@@ -68,10 +68,11 @@ const Header = (props: {
 
 
       {/* Search */}
-        <div className="hidden sm:block">
+        <div className="sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
               <button className="absolute left-0 top-1/2 -translate-y-1/2">
+              <div className="hidden sm:block">
                 <svg
                   className="fill-body hover:fill-primary dark:fill-bodydark dark:hover:fill-primary"
                   width="20"
@@ -93,6 +94,7 @@ const Header = (props: {
                     fill=""
                   />
                 </svg>
+              </div>
               </button>
 
               <input
@@ -112,15 +114,13 @@ const Header = (props: {
 
             {/* <!-- Notification Menu Area --> */}
             <DropdownNotification />
-            {/* <!-- Notification Menu Area --> */}
 
-            {/* <!-- Chat Notification Area --> */}
-            <DropdownMessage />
-            {/* <!-- Chat Notification Area --> */}
           </ul>
 
           {/* <!-- User Area --> */}
-          <DropdownUser />
+          <div className="hidden sm:block">
+          <DropdownUser/>
+          </div>
           {/* <!-- User Area --> */}
         </div>
       </div>
