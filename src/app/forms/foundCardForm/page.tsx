@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const FormLayout = () => {
   return (
     <>
-      <Breadcrumb pageName="Report Card Lost" />
+      <Breadcrumb pageName="Found Lost Card" />
 
       <div className="sm:grid-cols-2">
         <div className="flex flex-col gap-9">
