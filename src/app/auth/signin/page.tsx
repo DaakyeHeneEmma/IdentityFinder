@@ -296,7 +296,7 @@ const SignIn: React.FC = () => {
                 <p>
                     Don’t have any account?{" "}
                     <button onClick={handleSignUp} className="text-blue-500">
-                      Sign-Up
+                       Sign Up
                     </button>
                   </p>
                 </div>

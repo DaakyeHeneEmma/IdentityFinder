@@ -1,32 +1,20 @@
-"use client";
-
+import React from "react";
 import "jsvectormap/dist/jsvectormap.css";
 import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
-import React, { useEffect, useState } from "react";
-import Loader from "@/components/common/Loader";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const [loading, setLoading] = useState<boolean>(true);
+import { AuthProvider } from "./auth/AuthContext";
 
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
-
+export default function RootLayout({children}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" >
       <body suppressHydrationWarning={true}>
+        <AuthProvider>
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
-      <DefaultLayout>
-          {loading ? <Loader /> : children}
-      </DefaultLayout>
-        </div>
+          {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
