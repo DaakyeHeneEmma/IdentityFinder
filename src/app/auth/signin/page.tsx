@@ -1,19 +1,27 @@
+"use client"
+
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { useRouter } from "next/navigation";
+// import { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
-};
+// export const metadata = {
+//   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+//   description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+// };
 
 const SignIn: React.FC = () => {
+  const router = useRouter();
+
+  const handleSignUp = (e:any) => {
+    e.preventDefault();
+    router.push("/auth/signup");
+  };
   return (
     <>
-      {/* <Breadcrumb pageName="Sign In" /> */}
+      <Breadcrumb pageName="Sign In" />
 
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex flex-wrap items-center">
@@ -27,13 +35,13 @@ const SignIn: React.FC = () => {
                   width={176}
                   height={32}
                 />
-                <Image
+                {/* <Image
                   className="dark:hidden"
                   src={"/images/logo/logo-dark.svg"}
                   alt="Logo"
                   width={176}
                   height={32}
-                />
+                /> */}
               </Link>
 
               <p className="2xl:px-20">
@@ -168,9 +176,8 @@ const SignIn: React.FC = () => {
 
           <div className="w-full border-stroke dark:border-strokedark xl:w-1/2 xl:border-l-2">
             <div className="w-full p-4 sm:p-12.5 xl:p-17.5">
-              <span className="mb-1.5 block font-medium">Start for free</span>
               <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
-                Sign In to TailAdmin
+                Sign In to Identity
               </h2>
 
               <form>
@@ -286,11 +293,11 @@ const SignIn: React.FC = () => {
                 </button>
 
                 <div className="mt-6 text-center">
-                  <p>
+                <p>
                     Don’t have any account?{" "}
-                    <Link href="/auth/signup" className="text-primary">
-                      Sign Up
-                    </Link>
+                    <button onClick={handleSignUp} className="text-blue-500">
+                      Sign-Up
+                    </button>
                   </p>
                 </div>
               </form>
