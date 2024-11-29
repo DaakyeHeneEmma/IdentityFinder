@@ -17,7 +17,7 @@ export default function DefaultLayout() {
     <>
       {loading ? (<Loader />): (
         <>
-        {!user ? (
+        {user ? (
           <div className="flex">
         <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="relative flex flex-1 flex-col lg:ml-72.5">
