@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, {useState, } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
@@ -11,19 +11,78 @@ import { useRouter } from "next/navigation";
 //   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
 //   description: "This is Next.js Signin Page TailAdmin Dashboard Template",
 // };
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  getAuth,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth } from "@/app/lib/firebaseConfig";
+
 
 const SignIn: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setloginError]: any = useState(null);
   const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  const handleLogin = async (e: any) => {
+    e.preventDefault();
+    try {
+      console.log("start");
+      const sign = await signInWithEmailAndPassword(auth, email, password);
+      console.log("sss", sign);
+      router.push("/"); // Navigate to the home page
+    } catch (error: any) {
+      console.error("Error logging in:", error);
+      setloginError(error.message);
+
+      // Check for specific error codes
+
+      if (
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/invalid-email"
+      ) {
+        alert("Incorrect email or password");
+        console.log(error.code);
+      }
+
+      if (error.code === "auth/too-many-requests" ){
+        alert("Too many requests, try again later");
+      }
+    } 
+  };
+
+  const handleGoogleSignIn = async (e:any) => {
+    e.preventDefault();
+    const provider = new GoogleAuthProvider();
+    setEmail('')
+    setPassword('')
+    try {
+      const result: any = await signInWithPopup(getAuth(), provider);
+      const users = result.user;
+      console.log("User signed in:", users);
+      setUser(users);
+      router.push("/");
+      return user;
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
 
   const handleSignUp = (e:any) => {
     e.preventDefault();
     router.push("/auth/signup");
   };
+   
   return (
     <>
       <Breadcrumb pageName="Sign In" />
 
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="m-15 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
@@ -35,13 +94,6 @@ const SignIn: React.FC = () => {
                   width={176}
                   height={32}
                 />
-                {/* <Image
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                /> */}
               </Link>
 
               <p className="2xl:px-20">
@@ -51,7 +103,7 @@ const SignIn: React.FC = () => {
 
               <span className="mt-15 inline-block">
                 <svg
-                  width="350"
+                  width="350" 
                   height="350"
                   viewBox="0 0 350 350"
                   fill="none"
@@ -180,7 +232,7 @@ const SignIn: React.FC = () => {
                 Sign In to Identity
               </h2>
 
-              <form>
+              <form onSubmit={handleLogin}>
                 <div className="mb-4">
                   <label className="mb-2.5 block font-medium text-black dark:text-white">
                     Email
@@ -189,6 +241,7 @@ const SignIn: React.FC = () => {
                     <input
                       type="email"
                       placeholder="Enter your email"
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
 
@@ -219,6 +272,7 @@ const SignIn: React.FC = () => {
                   <div className="relative">
                     <input
                       type="password"
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="6+ Characters, 1 Capital letter"
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
@@ -289,7 +343,7 @@ const SignIn: React.FC = () => {
                       </defs>
                     </svg>
                   </span>
-                  Sign in with Google
+                  <span onClick={handleGoogleSignIn} >Sign in with Google</span>
                 </button>
 
                 <div className="mt-6 text-center">

@@ -1,23 +1,78 @@
-import React from "react";
+"use client"
+
+import React, {useState} from "react";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  getAuth,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "@/app/lib/firebaseConfig";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 
-import { Metadata } from "next";
+// import { Metadata } from "next";
 
 
-export const metadata: Metadata = {
-  title: "Identit",
-  description: "Idenity app",
-  // other metadata
-};
+// export const metadata: Metadata = {
+//   title: "Identit",
+//   description: "Idenity app"
+// };
 
 const SignUp: React.FC = () => {
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setloginError]: any = useState(null);
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  const handleSignUp = async (e: any) => {
+    e.preventDefault();
+    try {
+      console.log("start");
+      const signUp = await createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+
+        const userCreated = userCredential.user;
+        await updateProfile(userCreated, {displayName: displayName})
+        console.log(userCreated)
+        return user;
+  
+      });
+      console.log("sss", signUp);
+      router.push("/"); 
+    } catch (error: any) {
+      setloginError(error.message);
+      console.log(error)
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    setDisplayName('')
+    setEmail('')
+    setPassword('')
+    try {
+      const result: any = await signInWithPopup(getAuth(), provider);
+      const users = result.user;
+      console.log("User signed in:", users);
+      setUser(users);
+      router.push("/");
+      return user;
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
   return (
     <>
       <Breadcrumb pageName="Sign Up" />
 
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      <div className="m-15 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
@@ -29,13 +84,6 @@ const SignUp: React.FC = () => {
                   width={176}
                   height={32}
                 />
-                {/* <Image
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                /> */}
               </Link>
               <p className="2xl:px-20">
                 Lorem ipsumas dolor sit amet, consectetur adipiscing elit
@@ -173,7 +221,7 @@ const SignUp: React.FC = () => {
                 Sign Up to Identity
               </h2>
 
-              <form>
+              <form onSubmit={handleSignUp}>
                 <div className="mb-4">
                   <label className="mb-2.5 block font-medium text-black dark:text-white">
                     Name
@@ -182,6 +230,7 @@ const SignUp: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Enter your full name"
+                      onChange={(e) => setDisplayName(e.target.value)}
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
 
@@ -217,6 +266,7 @@ const SignUp: React.FC = () => {
                     <input
                       type="email"
                       placeholder="Enter your email"
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
 
@@ -248,6 +298,7 @@ const SignUp: React.FC = () => {
                     <input
                       type="password"
                       placeholder="Enter your password"
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
 
@@ -352,7 +403,7 @@ const SignUp: React.FC = () => {
                       </defs>
                     </svg>
                   </span>
-                  Sign up with Google
+                  <span onClick={handleGoogleSignIn}>Signup with Google</span>
                 </button>
 
                 <div className="mt-6 text-center">
