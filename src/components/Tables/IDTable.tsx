@@ -91,14 +91,13 @@ const IdentificationTable = () => {
           {/* <div className="col-span-1 flex items-center">
             <p className="text-sm text-meta-3">${product.profit}</p>
           </div> */}
-          <div>
+     
           <button
             onClick={()=>handleDelete(product.id)}
-            className="border bg-red-400 p-1 rounded text-white"
+            className="border bg-red-400 items-center rounded text-white"
           >
             Delete Item
           </button>
-          </div>
         </div> 
       )) : <p>loading...</p>}
     </div>
