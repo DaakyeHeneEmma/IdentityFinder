@@ -48,13 +48,13 @@ const IdentificationTable = () => {
           <p className="font-medium">Category</p>
         </div>
         <div className="col-span-2 flex items-center">
-          <p className="font-medium">Location</p>
-        </div>
-        <div className="col-span-1 flex items-center">
           <p className="font-medium">Reward</p>
         </div>
-        {/* <div className="col-span-1 flex items-center">
+        <div className="col-span-1 flex items-center">
           <p className="font-medium"></p>
+        </div>
+        {/* <div className="col-span-1 flex items-center">
+          <p className="font-medium">Location</p>
         </div> */}
       </div>
 
@@ -85,19 +85,13 @@ const IdentificationTable = () => {
           </div>
           <div className="col-span-2 flex items-center">
             <p className="text-sm text-black dark:text-white">
-              ${product.price}
+              ${product.price} : {product.profit}
             </p>
           </div>
-          {/* <div className="col-span-1 flex items-center">
-            <p className="text-sm text-meta-3">${product.profit}</p>
-          </div> */}
-     
-          <button
-            onClick={()=>handleDelete(product.id)}
-            className="border bg-red-400 items-center rounded text-white"
-          >
-            Delete Item
-          </button>
+          <div className="col-span-1 flex items-center pointer"  onClick={()=>handleDelete(product.id)}>
+            <p className="text-sm text-meta-3">Delete Item</p>
+          </div>
+    
         </div> 
       )) : <p>loading...</p>}
     </div>
