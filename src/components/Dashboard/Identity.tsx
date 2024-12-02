@@ -2,7 +2,7 @@
 
 import React from "react";
 import ChatCard from "../Chat/ChatCard";
-import IdentificationTable from "../Tables/IdTable";
+import IdentificationTable from "../Tables/IDTable";
 import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
 
