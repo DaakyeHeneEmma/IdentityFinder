@@ -11,10 +11,11 @@ const SidebarItem = ({ item, pageName, setPageName, setSidebarOpen }: any) => {
     setSidebarOpen(false);
   };
 
-  const pathname = usePathname();
+  let pathname = usePathname();
 
   const isActive = (item: any) => {
     if (item.route === pathname) return true;
+      pathname = item.route
     if (item.children) {
       return item.children.some((child: any) => isActive(child));
     }
