@@ -104,10 +104,6 @@ const menuGroups = [
         ),
         label: "Report Card",
         route: "/forms/reportCardForm",
-        // children: [
-        //   { label: "Form Elements", route: "/forms/form-elements" },
-        //   { label: "Form Layout", route: "/forms/form-layout" },
-        // ],
       },
       {
         icon: (
@@ -255,7 +251,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </div>
             ))}
           </nav>
-          {/* <!-- Sidebar Menu --> */}
         </div>
       </aside>
     </ClickOutside>
