@@ -1,22 +1,25 @@
+"use client"
+
+import React, { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Identity",
-  description:
-    "Find Your Identity",
-};
+// export const metadata: Metadata = {
+//   title: "Identity",
+//   description:
+//     "Find Your Identity",
+// };
 
 const Profile = () => {
+
+
   return (
-      <div className="mx-auto max-w-242.5">
+    <>
         <Breadcrumb pageName="Profile"/>
-        
         <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        
+      
           <div className="relative z-20 h-35 md:h-65">
             <Image
               src={"/images/cover/cover-01.png"}
@@ -29,7 +32,6 @@ const Profile = () => {
                 height: "auto",
               }}
             />
-
           </div>
           <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
             
@@ -256,8 +258,8 @@ const Profile = () => {
               </div>
             </div>
           </div>
-        </div>
       </div>
+      </>
   );
 };
 
