@@ -3,20 +3,14 @@
 import React, { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
-// import { Metadata } from "next";
 import Link from "next/link";
-
-// export const metadata: Metadata = {
-//   title: "Identity",
-//   description:
-//     "Find Your Identity",
-// };
+import Skeleton from "@/components/Layouts/Skeleton";
 
 const Profile = () => {
 
 
   return (
-    <>
+    <Skeleton>
         <Breadcrumb pageName="Profile"/>
         <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       
@@ -259,7 +253,7 @@ const Profile = () => {
             </div>
           </div>
       </div>
-      </>
+      </Skeleton>
   );
 };
 

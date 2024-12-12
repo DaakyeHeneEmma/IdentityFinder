@@ -1,9 +1,8 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 
 import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import SelectGroupOne from "@/components/SelectGroup/SelectGroupOne";
-import Link from "next/link";
+import Skeleton from "@/components/Layouts/Skeleton";
 
 export const metadata: Metadata = {
   title: "Identity",
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 
 const FormLayout = () => {
   return (
-    <>
+    <Skeleton>
       <Breadcrumb pageName="Found Lost Card" />
 
       <div className="sm:grid-cols-2">
@@ -107,7 +106,7 @@ const FormLayout = () => {
 
 
       </div>
-    </>
+    </Skeleton>
   );
 };
 

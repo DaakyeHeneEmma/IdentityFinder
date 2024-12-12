@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react"
 import db from "@/app/lib/firestore";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore"
+import { LoaderSmall } from "../common/Loader";
 
 
 const IdentificationTable = () => {
@@ -93,7 +94,7 @@ const IdentificationTable = () => {
           </div>
     
         </div> 
-      )) : <p>loading...</p>}
+      )) : <div><LoaderSmall /></div>}
     </div>
   );
 };
