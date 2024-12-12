@@ -17,7 +17,7 @@ const DeleteItem = ({ id }:any) => {
   return (
     <button
       onClick={handleDelete}
-      className="border bg-red-400 p-1 rounded text-white"
+      className="border bg-red-400 p-1 cursor-pointer rounded text-white"
     >
       Delete Item
     </button>

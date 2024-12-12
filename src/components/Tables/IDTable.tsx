@@ -66,7 +66,7 @@ const IdentificationTable = () => {
         >
           <div className="col-span-3 flex items-center">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="h-12.5 w-15 rounded-md">
+              <div className="h-12.5 w-15 rounded-md cursor-pointer">
                 <Image
                   src={product?.image}
                   width={60}
@@ -74,7 +74,7 @@ const IdentificationTable = () => {
                   alt="Product"
                 />
               </div>
-              <p className="text-sm text-black dark:text-white">
+              <p className="text-sm text-black dark:text-white cursor-pointer">
                 {product?.name}
               </p>
             </div>
@@ -90,7 +90,7 @@ const IdentificationTable = () => {
             </p>
           </div>
           <div className="col-span-1 flex items-center pointer"  onClick={()=>handleDelete(product.id)}>
-            <p className="text-sm text-meta-3">Delete Item</p>
+            <p className="text-sm text-meta-3 cursor-pointer">Delete Item</p>
           </div>
     
         </div> 
