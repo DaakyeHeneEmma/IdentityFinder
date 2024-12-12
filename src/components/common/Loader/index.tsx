@@ -7,3 +7,16 @@ const Loader = () => {
 };
 
 export default Loader;
+
+
+export const LoaderSmall = () => {
+  return (
+    <div className="flex items-center justify-center bg-white dark:bg-black mb-3">
+      <div className="h-5 w-5 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+    </div>
+  );
+};
+
+
+
+
