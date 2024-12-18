@@ -1,55 +1,40 @@
 "use client";
 import React, { useState } from "react";
 
-const SelectGroupOne: React.FC = () => {
-  const [selectedOption, setSelectedOption] = useState<string>("");
-  const [isOptionSelected, setIsOptionSelected] = useState<boolean>(false);
-
-  const changeTextColor = () => {
-    setIsOptionSelected(true);
-  };
-
+const SelectGroupOne: React.FC<{ selectedOption: string; onSelectChange: (value: string) => void; }> = ({ selectedOption, onSelectChange }) => {
   return (
     <div className="mb-4.5">
       <label className="mb-2.5 block text-black dark:text-white">
-        {" "}
-        Subject{" "}
+        Subject
       </label>
-
       <div className="relative z-20 bg-transparent dark:bg-form-input">
         <select
           value={selectedOption}
-          onChange={(e) => {
-            setSelectedOption(e.target.value);
-            changeTextColor();
-          }}
-          className={`relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary ${
-            isOptionSelected ? "text-black dark:text-white" : ""
-          }`}
+          onChange={(e) => onSelectChange(e.target.value)}
+          className={`relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-5 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary`}
         >
           <option value="" disabled className="text-body dark:text-bodydark">
             Select your Identification Type
           </option>
-          <option value="USA" className="text-body dark:text-bodydark">
+          <option value="GHANACARD" className="text-body dark:text-bodydark">
             Passport
           </option>
-          <option value="UK" className="text-body dark:text-bodydark">
+          <option value="ECOWAS" className="text-body dark:text-bodydark">
             Ecowas Card(Ghana Card)
           </option>
-          <option value="Canada" className="text-body dark:text-bodydark">
+          <option value="STUDENTID" className="text-body dark:text-bodydark">
             Student ID
           </option>
-          <option value="Canada" className="text-body dark:text-bodydark">
+          <option value="NHIS" className="text-body dark:text-bodydark">
             Health Insurance
           </option>
-          <option value="Canada" className="text-body dark:text-bodydark">
+          <option value="BUSINESSCARD" className="text-body dark:text-bodydark">
             Business Card
           </option>
-          <option value="Canada" className="text-body dark:text-bodydark">
-            Ohter
+          <option value="OTHERS" className="text-body dark:text-bodydark">
+            Other
           </option>
         </select>
-
         <span className="absolute right-4 top-1/2 z-30 -translate-y-1/2">
           <svg
             className="fill-current"

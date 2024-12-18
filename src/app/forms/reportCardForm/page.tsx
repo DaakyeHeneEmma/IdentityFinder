@@ -1,19 +1,33 @@
+'use client'
+
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 
-import { Metadata } from "next";
+// import { Metadata } from "next";
 import SelectGroupOne from "@/components/SelectGroup/SelectGroupOne";
 import Skeleton from "@/components/Layouts/Skeleton";
+import { useState } from "react";
 
-export const metadata: Metadata = {
-  title: "Identity",
-  description:
-    "Report Card Lost",
-};
+// export const metadata: Metadata = {
+//   title: "Identity",
+//   description:
+//     "Report Card Lost",
+// };
 
 const FormLayout = () => {
+  const [selectedOption, setSelectedOption] = useState<string>("");
+
+  const handleSelectChange = (value: string) => {
+    setSelectedOption(value);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    console.log("Selected Option:", selectedOption);
+  };
+
   return (
     <Skeleton>
-      <Breadcrumb pageName="Report Card Lost" />
+      <Breadcrumb pageName="Lost Identity" />
 
       <div className="sm:grid-cols-2">
         <div className="flex flex-col gap-9">
@@ -24,7 +38,7 @@ const FormLayout = () => {
                 Contact Form
               </h3>
             </div>
-            <form action="#">
+            <form action="#" onSubmit={handleSubmit}>
               <div className="p-6.5">
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
@@ -82,7 +96,7 @@ const FormLayout = () => {
                     </div>
                 </div>
 
-                <SelectGroupOne />
+                <SelectGroupOne selectedOption={selectedOption} onSelectChange={handleSelectChange} />
                 
 
                 <div className="mb-6">
@@ -97,7 +111,7 @@ const FormLayout = () => {
                 </div>
 
                 <button className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90">
-                  Send Message
+                  Report Lost Card
                 </button>
               </div>
             </form>
