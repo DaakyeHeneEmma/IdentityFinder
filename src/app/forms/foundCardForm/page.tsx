@@ -19,9 +19,21 @@ const FoundLostCard = () => {
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState("");
   const [cardOption, setCardOption] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!name || !phoneNumber || !email || !category || !cardOption) {
+        alert("Please fill in all required fields."); 
+        return; 
+    }
+
+    setShowConfirm(true); 
+  };
+
+  const confirmSubmit = async () => {
+    setShowConfirm(false);
 
     try {
       await addDoc(collection(db, "items"), {
@@ -43,6 +55,10 @@ const FoundLostCard = () => {
       console.error("Error adding document: ", error);
       alert("Error adding document");
     }
+  };
+
+  const cancelSubmit = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -141,13 +157,35 @@ const FoundLostCard = () => {
                 </div>
 
                 <button className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90">
-                  Send Message
+                  SUBMIT
                 </button>
               </div>
             </form>
           </div>
         </div>
       </div>
+
+      {/* Confirmation Popup */}
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-20 rounded shadow-lg z-60">
+            <h3 className="font-medium text-black ">Confirm Submission</h3>
+            
+            <ul>
+              <li>Name: {name}</li>
+              <li>Phone Number: {phoneNumber}</li>
+              <li>Email: {email}</li>
+              <li>Category: {category}</li>
+              <li>Card Option: {cardOption}</li>
+        
+            </ul>
+            <div className="flex justify-end mt-4">
+              <button onClick={cancelSubmit} className="mr-10 bg-gray-300 p-2 rounded">Cancel</button>
+              <button onClick={confirmSubmit} className="bg-primary p-2 rounded text-white">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Skeleton>
   );
 };
