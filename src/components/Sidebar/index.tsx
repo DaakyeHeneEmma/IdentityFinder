@@ -45,8 +45,8 @@ const menuGroups = [
           </svg>
         ),
         label: "Identity",
-        route: "/"  
-      },  
+        route: "/",
+      },
       {
         icon: (
           <svg
@@ -139,7 +139,7 @@ const menuGroups = [
         ),
         label: "Found Card",
         route: "/forms/foundCardForm",
-      }
+      },
     ],
   },
   {
@@ -201,7 +201,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               width={126}
               height={32}
               src={"/images/logo/logo.png"}
-              alt="Logo"  
+              alt="Logo"
+              style={{
+                width: "auto",
+                height: "auto",
+              }}
               priority
             />
           </Link>

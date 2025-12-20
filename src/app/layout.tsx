@@ -7,14 +7,15 @@ import { Metadata } from "next";
 import { AuthProvider } from "./auth/AuthContext";
 
 export const metadata: Metadata = {
-  title:"Identity-Finder",
+  title: "Identity-Finder",
   description: "Find Your Identity",
 };
 
-export default function RootLayout({children}: Readonly<{ children: React.ReactNode }>) {
-
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" >
+    <html lang="en">
       <body suppressHydrationWarning={true}>
         <AuthProvider>
           {children}

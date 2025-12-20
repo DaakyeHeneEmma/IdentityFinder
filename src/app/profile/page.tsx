@@ -1,112 +1,301 @@
-"use client"
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import ProfileImage from "@/components/ProfileImage";
 import Image from "next/image";
 import Link from "next/link";
 import Skeleton from "@/components/Layouts/Skeleton";
+import { useAuth } from "@/app/auth/AuthContext";
+import { UserProfile, UserStats } from "@/types/user";
+import { fetchUserProfile, fetchUserStats } from "@/app/lib/userUtils";
+import { useHydrationSafeAuth } from "@/hooks/useHydration";
+
+const DEFAULT_AVATAR = "/images/user/spartan.jpg";
 
 const Profile = () => {
+  const authState = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    isHydrated,
+  } = useHydrationSafeAuth(authState.user, authState.loading);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userStats, setUserStats] = useState<UserStats>({
+    cardsReported: 0,
+    cardsFound: 0,
+    rewardPoints: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
+  const fetchUserData = useCallback(
+    async (showRefreshing = false) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        if (showRefreshing) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
+
+        // Fetch user profile using utility function
+        const profileData = await fetchUserProfile(user);
+        setUserProfile(profileData);
+
+        // Fetch user statistics using utility function
+        const statsData = await fetchUserStats(user.uid);
+        setUserStats(statsData);
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError("Failed to load profile data");
+
+        // Fallback to basic user data from Firebase Auth
+        if (user) {
+          setUserProfile({
+            name: user.displayName || "User",
+            email: user.email || "",
+            phone: user.phoneNumber || "",
+            occupation: "Not specified",
+            bio: "No bio available",
+            photoURL: user.photoURL || "/images/user/spartan.jpg",
+            socialLinks: {},
+          });
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [user],
+  );
+
+  const handleRefresh = async () => {
+    await fetchUserData(true);
+  };
+
+  useEffect(() => {
+    if (!authLoading && isHydrated) {
+      fetchUserData();
+    }
+  }, [user, authLoading, fetchUserData, isHydrated]);
+
+  if (!isHydrated || authLoading || loading) {
+    return (
+      <Skeleton>
+        <Breadcrumb pageName="Profile" />
+        <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="animate-pulse">
+            <div className="h-65 bg-gray-200 dark:bg-gray-700"></div>
+            <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
+              <div className="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-gray-200 dark:bg-gray-700 sm:h-44 sm:max-w-44"></div>
+              <div className="mt-4 space-y-4">
+                <div className="mx-auto h-8 w-48 rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="mx-auto h-4 w-32 rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="mx-auto h-4 w-40 rounded bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Skeleton>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Skeleton>
+        <Breadcrumb pageName="Profile" />
+        <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="px-4 py-16 text-center">
+            <h3 className="mb-4 text-xl font-semibold text-black dark:text-white">
+              Please Sign In
+            </h3>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">
+              You need to be signed in to view your profile.
+            </p>
+            <Link
+              href="/auth/signin"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-white hover:bg-opacity-90"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </Skeleton>
+    );
+  }
+
+  if (error && !userProfile) {
+    return (
+      <Skeleton>
+        <Breadcrumb pageName="Profile" />
+        <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="px-4 py-16 text-center">
+            <h3 className="mb-4 text-xl font-semibold text-red-600">
+              Error Loading Profile
+            </h3>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">{error}</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-white hover:bg-opacity-90 disabled:opacity-50"
+              >
+                {refreshing ? "Refreshing..." : "Retry"}
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center rounded-md border border-stroke px-6 py-3 text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-gray-800"
+              >
+                Reload Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </Skeleton>
+    );
+  }
 
   return (
     <Skeleton>
-        <Breadcrumb pageName="Profile"/>
-        <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      
-          <div className="relative z-20 h-35 md:h-65">
-            <Image
-              src={"/images/cover/cover-01.png"}
-              alt="profile cover"
-              className="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center"
-              width={970}
-              height={260}
-              style={{
-                width: "auto",
-                height: "auto",
-              }}
-            />
-          </div>
-          <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
-            
-            <div className="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 
-            rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-44 sm:p-3">
-              {/* User Image  */}
-              <div className="flex relative drop-shadow-2">
-                <Image
-                  src={"/images/user/spartan.jpg"}
-                  width={160}
-                  height={160}
-                  style={{
-                    width: "auto",
-                    height: "auto",
-                    borderRadius: '1.2em'
-                  }}
-                  alt="profile"
-                />
-              </div>
-              
+      <Breadcrumb pageName="Profile" />
+      <div
+        className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark"
+        suppressHydrationWarning
+      >
+        <div className="relative z-20 h-35 md:h-65">
+          <Image
+            src={"/images/cover/cover-01.png"}
+            alt="profile cover"
+            className="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center"
+            width={970}
+            height={260}
+            style={{
+              width: "auto",
+              height: "auto",
+            }}
+          />
+        </div>
+
+        <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
+          <div
+            className="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30
+          rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-44 sm:p-3"
+          >
+            <div className="relative flex drop-shadow-2">
+              <ProfileImage
+                src={userProfile?.photoURL}
+                alt={`${userProfile?.name || "User"}'s profile`}
+                size={160}
+                className="rounded-3xl"
+                fallbackName={userProfile?.name || "User"}
+                priority
+              />
             </div>
-            
-            <div className="mt-4 ">
-              <div className="mb-4 mt-2 mr-6 ml-6 right-1 z-10 xsm:bottom-4 xsm:right-4">
+          </div>
+
+          <div className="mt-4">
+            <div className="right-1 z-10 mb-4 ml-6 mr-6 mt-2 flex justify-center gap-2 xsm:bottom-4 xsm:right-4">
               <Link
                 href={`/settings`}
-                className="flex cursor-pointer items-center justify-center gap-2 
+                className="flex cursor-pointer items-center justify-center gap-2
                 rounded bg-primary px-2 py-1 text-sm font-medium text-white hover:bg-opacity-80 xsm:px-4"
               >
                 <span>Edit Profile</span>
               </Link>
-              </div>
-              
-              <h3 className="mb-1.5 text-2xl font-semibold text-black dark:text-white">
-                Kwabena Asumadu
-              </h3>
-              <p className="font-medium">Occupation: Student</p>
-              <p className="font-medium">Phone Number: 0243232313</p>
-              <div className="mx-auto mb-5.5 mt-4.5 grid max-w-94 grid-cols-3 rounded-md border border-stroke py-2.5 shadow-1 dark:border-strokedark dark:bg-[#37404F]">
-                <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
-                  <span className="font-semibold text-black dark:text-white">
-                    2
-                  </span>
-                  <span className="text-sm">Cards</span>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
-                  <span className="font-semibold text-black dark:text-white">
-                    0
-                  </span>
-                  <span className="text-sm">Found</span>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-1 px-4 xsm:flex-row">
-                  <span className="font-semibold text-black dark:text-white">
-                    500
-                  </span>
-                  <span className="text-sm">Rewards</span>
-                </div>
-              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex cursor-pointer items-center justify-center gap-2
+                rounded border border-stroke px-2 py-1 text-sm font-medium text-black hover:bg-gray-50 disabled:opacity-50 dark:border-strokedark dark:text-white dark:hover:bg-gray-800 xsm:px-4"
+              >
+                <svg
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+              </button>
+            </div>
 
-              <div className="mx-auto max-w-180">
-                <h4 className="font-semibold text-black dark:text-white">
-                  About Me
-                </h4>
-                <p className="mt-4.5">
-                  I am a farmer, a guardian of the land. I rise with the dawn, 
-                  my weathered hands calloused from toil. The earth is my canvas, 
-                  the seeds my brushstrokes. I tend to my crops, 
-                  nurture them from tender sprouts to bountiful harvests.
-                 The rhythm of the seasons guides my work, a cycle as old as time.
-                </p>
-              </div>
+            <h3
+              className="mb-1.5 text-2xl font-semibold text-black dark:text-white"
+              suppressHydrationWarning
+            >
+              {userProfile?.name || "User"}
+            </h3>
+            <p className="font-medium" suppressHydrationWarning>
+              Occupation: {userProfile?.occupation || "Not specified"}
+            </p>
+            <p className="font-medium" suppressHydrationWarning>
+              Phone Number: {userProfile?.phone || "Not provided"}
+            </p>
+            <p
+              className="text-sm font-medium text-gray-600 dark:text-gray-400"
+              suppressHydrationWarning
+            >
+              Email: {userProfile?.email || "Not provided"}
+            </p>
 
-              <div className="mt-6.5">
-                <h4 className="mb-3.5 font-medium text-black dark:text-white">
-                  Follow me on
-                </h4>
-                <div className="flex items-center justify-center gap-3.5">
+            <div
+              className="mx-auto mb-5.5 mt-4.5 grid max-w-94 grid-cols-3 rounded-md border border-stroke py-2.5 shadow-1 dark:border-strokedark dark:bg-[#37404F]"
+              suppressHydrationWarning
+            >
+              <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
+                <span className="font-semibold text-black dark:text-white">
+                  {userStats.cardsReported}
+                </span>
+                <span className="text-sm">Reported</span>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
+                <span className="font-semibold text-black dark:text-white">
+                  {userStats.cardsFound}
+                </span>
+                <span className="text-sm">Found</span>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-1 px-4 xsm:flex-row">
+                <span className="font-semibold text-black dark:text-white">
+                  {userStats.rewardPoints}
+                </span>
+                <span className="text-sm">Rewards</span>
+              </div>
+            </div>
+
+            <div className="mx-auto max-w-180">
+              <h4 className="font-semibold text-black dark:text-white">
+                About Me
+              </h4>
+              <p className="mt-4.5" suppressHydrationWarning>
+                {userProfile?.bio || "No bio available."}
+              </p>
+            </div>
+
+            <div className="mt-6.5">
+              <h4 className="mb-3.5 font-medium text-black dark:text-white">
+                Follow me on
+              </h4>
+              <div className="flex items-center justify-center gap-3.5">
+                {userProfile?.socialLinks?.facebook && (
                   <Link
-                    href="#"
+                    href={userProfile.socialLinks.facebook}
                     className="hover:text-primary"
-                    aria-label="social-icon"
+                    aria-label="facebook"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="fill-current"
@@ -129,10 +318,15 @@ const Profile = () => {
                       </defs>
                     </svg>
                   </Link>
+                )}
+
+                {userProfile?.socialLinks?.twitter && (
                   <Link
-                    href="#"
+                    href={userProfile.socialLinks.twitter}
                     className="hover:text-primary"
-                    aria-label="social-icon"
+                    aria-label="twitter"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="fill-current"
@@ -160,10 +354,15 @@ const Profile = () => {
                       </defs>
                     </svg>
                   </Link>
+                )}
+
+                {userProfile?.socialLinks?.linkedin && (
                   <Link
-                    href="#"
+                    href={userProfile.socialLinks.linkedin}
                     className="hover:text-primary"
-                    aria-label="social-icon"
+                    aria-label="linkedin"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="fill-current"
@@ -191,10 +390,15 @@ const Profile = () => {
                       </defs>
                     </svg>
                   </Link>
+                )}
+
+                {userProfile?.socialLinks?.dribbble && (
                   <Link
-                    href="#"
+                    href={userProfile.socialLinks.dribbble}
                     className="hover:text-primary"
-                    aria-label="social-icon"
+                    aria-label="dribbble"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="fill-current"
@@ -217,10 +421,15 @@ const Profile = () => {
                       </defs>
                     </svg>
                   </Link>
+                )}
+
+                {userProfile?.socialLinks?.github && (
                   <Link
-                    href="#"
+                    href={userProfile.socialLinks.github}
                     className="hover:text-primary"
-                    aria-label="social-icon"
+                    aria-label="github"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="fill-current"
@@ -248,12 +457,23 @@ const Profile = () => {
                       </defs>
                     </svg>
                   </Link>
-                </div>
+                )}
+
+                {/* Show placeholder social icons if no social links are provided */}
+                {(!userProfile?.socialLinks ||
+                  Object.keys(userProfile.socialLinks).length === 0) && (
+                  <>
+                    <span className="text-sm text-gray-400 dark:text-gray-600">
+                      No social links added
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
+        </div>
       </div>
-      </Skeleton>
+    </Skeleton>
   );
 };
 

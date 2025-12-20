@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, {useState, } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
@@ -18,7 +18,6 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { auth } from "@/app/lib/firebaseConfig";
-
 
 const SignIn: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -50,17 +49,18 @@ const SignIn: React.FC = () => {
         console.log(error.code);
       }
 
-      if (error.code === "auth/too-many-requests" ){
+      if (error.code === "auth/too-many-requests") {
         alert("Too many requests, try again later");
       }
-    } 
+    }
   };
 
-  const handleGoogleSignIn = async (e:any) => {
+  const handleGoogleSignIn = async (e: any) => {
     e.preventDefault();
     const provider = new GoogleAuthProvider();
-    setEmail('')
-    setPassword('')
+    setEmail("");
+    setPassword("");
+    setloginError(null); // Clear any previous errors
     try {
       const result: any = await signInWithPopup(getAuth(), provider);
       const users = result.user;
@@ -68,16 +68,37 @@ const SignIn: React.FC = () => {
       setUser(users);
       router.push("/");
       return user;
-    } catch (error) {
-      console.log("error", error);
+    } catch (error: any) {
+      console.error("Google Sign-in error:", error);
+
+      // Handle specific Google Sign-in errors
+      if (error.code === "auth/popup-closed-by-user") {
+        // User closed the popup, don't show an error
+        return;
+      } else if (error.code === "auth/popup-blocked") {
+        alert("Popup was blocked. Please allow popups and try again.");
+      } else if (error.code === "auth/cancelled-popup-request") {
+        // Multiple popup requests, ignore
+        return;
+      } else if (
+        error.code === "auth/account-exists-with-different-credential"
+      ) {
+        alert(
+          "An account already exists with this email using a different sign-in method.",
+        );
+      } else {
+        alert("Google Sign-in failed. Please try again.");
+      }
+
+      setloginError(error.message);
     }
   };
 
-  const handleSignUp = (e:any) => {
+  const handleSignUp = (e: any) => {
     e.preventDefault();
     router.push("/auth/signup");
   };
-   
+
   return (
     <>
       <Breadcrumb pageName="Sign In" />
@@ -103,7 +124,7 @@ const SignIn: React.FC = () => {
 
               <span className="mt-15 inline-block">
                 <svg
-                  width="350" 
+                  width="350"
                   height="350"
                   viewBox="0 0 350 350"
                   fill="none"
@@ -309,7 +330,11 @@ const SignIn: React.FC = () => {
                   />
                 </div>
 
-                <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50"
+                >
                   <span>
                     <svg
                       width="20"
@@ -343,14 +368,14 @@ const SignIn: React.FC = () => {
                       </defs>
                     </svg>
                   </span>
-                  <span onClick={handleGoogleSignIn} >Sign in with Google</span>
+                  <span>Sign in with Google</span>
                 </button>
 
                 <div className="mt-6 text-center">
-                <p>
+                  <p>
                     Don’t have any account?{" "}
                     <button onClick={handleSignUp} className="text-blue-500">
-                       Sign Up
+                      Sign Up
                     </button>
                   </p>
                 </div>
