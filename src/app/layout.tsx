@@ -4,7 +4,7 @@ import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
 import { Metadata } from "next";
-import { AuthProvider } from "./auth/AuthContext";
+import { SupabaseAuthProvider } from "./auth/SupabaseAuthContext";
 
 export const metadata: Metadata = {
   title: "Identity-Finder",
@@ -17,9 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <SupabaseAuthProvider>{children}</SupabaseAuthProvider>
       </body>
     </html>
   );

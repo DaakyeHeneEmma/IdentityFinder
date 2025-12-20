@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import SignIn from "@/app/auth/signin/page";
 import Loader from "@/components/common/Loader";
-import { useAuth } from "@/app/auth/AuthContext";
+import { useAuth } from "@/app/auth/SupabaseAuthContext";
 
 interface SkeletonProps {
   children: React.ReactNode;

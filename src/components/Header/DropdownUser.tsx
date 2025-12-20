@@ -2,19 +2,20 @@ import { useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import ProfileImage from "@/components/ProfileImage";
-import { useAuth } from "@/app/auth/AuthContext";
-import { signOut } from "firebase/auth";
-import { auth } from "@/app/lib/firebaseConfig";
+import { useAuth } from "@/app/auth/SupabaseAuthContext";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { _, user }: any = useAuth();
+  const { _, user, signOut }: any = useAuth();
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      console.log("User signed out");
-      user === null;
+      const { error } = await signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      } else {
+        console.log("User signed out");
+      }
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -34,16 +35,22 @@ const DropdownUser = () => {
         >
           <span className="hidden text-right lg:block">
             <span className="block text-sm font-medium text-black dark:text-white">
-              {user?.displayName}
+              {user?.user_metadata?.name ||
+                user?.email?.split("@")[0] ||
+                "User"}
             </span>
-            <span className="block text-xs">{user?.displayName}</span>
+            <span className="block text-xs">{user?.email}</span>
           </span>
 
           <ProfileImage
-            src={user?.photoURL}
-            alt={`${user?.displayName || "User"}'s profile`}
+            src={
+              user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+            }
+            alt={`${user?.user_metadata?.name || user?.email?.split("@")[0] || "User"}'s profile`}
             size={48}
-            fallbackName={user?.displayName || "User"}
+            fallbackName={
+              user?.user_metadata?.name || user?.email?.split("@")[0] || "User"
+            }
             showInitials={true}
           />
 

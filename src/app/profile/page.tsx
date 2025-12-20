@@ -1,40 +1,64 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import ProfileImage from "@/components/ProfileImage";
 import Image from "next/image";
 import Link from "next/link";
 import Skeleton from "@/components/Layouts/Skeleton";
-import { useAuth } from "@/app/auth/AuthContext";
+import { useAuth } from "@/app/auth/SupabaseAuthContext";
 import { UserProfile, UserStats } from "@/types/user";
-import { fetchUserProfile, fetchUserStats } from "@/app/lib/userUtils";
-import { useHydrationSafeAuth } from "@/hooks/useHydration";
+import { fetchCompleteUserData } from "@/app/lib/supabaseUserUtils";
+import { measureAsync } from "@/app/lib/performance";
 
 const DEFAULT_AVATAR = "/images/user/spartan.jpg";
 
+interface ProfileData {
+  profile: UserProfile;
+  stats: UserStats;
+}
+
 const Profile = () => {
-  const authState = useAuth();
-  const {
-    user,
-    loading: authLoading,
-    isHydrated,
-  } = useHydrationSafeAuth(authState.user, authState.loading);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [userStats, setUserStats] = useState<UserStats>({
-    cardsReported: 0,
-    cardsFound: 0,
-    rewardPoints: 0,
-  });
+  const { user, loading: authLoading } = useAuth();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [dataCache, setDataCache] = useState<
+    Map<string, { data: ProfileData; timestamp: number }>
+  >(new Map());
+
+  // Memoize cache key to prevent unnecessary recalculations
+  const cacheKey = useMemo(() => user?.id || "", [user?.id]);
+
+  // Check cache before making API calls
+  const getCachedData = useCallback(
+    (userId: string): ProfileData | null => {
+      const cached = dataCache.get(userId);
+      if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
+        // 5 minute cache
+        return cached.data;
+      }
+      return null;
+    },
+    [dataCache],
+  );
 
   const fetchUserData = useCallback(
-    async (showRefreshing = false) => {
+    async (showRefreshing = false, forceRefresh = false) => {
       if (!user) {
         setLoading(false);
         return;
+      }
+
+      // Check cache first (unless force refresh)
+      if (!forceRefresh) {
+        const cachedData = getCachedData(user.id);
+        if (cachedData) {
+          setProfileData(cachedData);
+          setLoading(false);
+          return;
+        }
       }
 
       try {
@@ -45,49 +69,75 @@ const Profile = () => {
         }
         setError(null);
 
-        // Fetch user profile using utility function
-        const profileData = await fetchUserProfile(user);
-        setUserProfile(profileData);
+        // Use optimized combined fetch with performance monitoring
+        const { profile, stats } = await measureAsync(
+          "profile-data-fetch",
+          () => fetchCompleteUserData(user),
+          { userId: user.id, forceRefresh },
+        );
 
-        // Fetch user statistics using utility function
-        const statsData = await fetchUserStats(user.uid);
-        setUserStats(statsData);
+        const newProfileData = { profile, stats };
+        setProfileData(newProfileData);
+
+        // Update cache
+        setDataCache(
+          (prev) =>
+            new Map(
+              prev.set(user.id, {
+                data: newProfileData,
+                timestamp: Date.now(),
+              }),
+            ),
+        );
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError("Failed to load profile data");
 
-        // Fallback to basic user data from Firebase Auth
+        // Fallback to basic user data from Supabase Auth
         if (user) {
-          setUserProfile({
-            name: user.displayName || "User",
-            email: user.email || "",
-            phone: user.phoneNumber || "",
-            occupation: "Not specified",
-            bio: "No bio available",
-            photoURL: user.photoURL || "/images/user/spartan.jpg",
-            socialLinks: {},
-          });
+          const fallbackData = {
+            profile: {
+              name:
+                user.user_metadata?.name || user.email?.split("@")[0] || "User",
+              email: user.email || "",
+              phone: user.phone || "",
+              occupation: "Not specified",
+              bio: "No bio available",
+              photoURL:
+                user.user_metadata?.avatar_url ||
+                user.user_metadata?.picture ||
+                DEFAULT_AVATAR,
+              socialLinks: {},
+            },
+            stats: {
+              cardsReported: 0,
+              cardsFound: 0,
+              rewardPoints: 0,
+            },
+          };
+          setProfileData(fallbackData);
         }
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [user],
+    [user, getCachedData],
   );
 
   const handleRefresh = async () => {
-    await fetchUserData(true);
+    await fetchUserData(true, true); // Show refreshing and force refresh
   };
 
   useEffect(() => {
-    if (!authLoading && isHydrated) {
+    if (!authLoading && user) {
       fetchUserData();
     }
-  }, [user, authLoading, fetchUserData, isHydrated]);
+  }, [user, authLoading, fetchUserData]);
 
-  if (!isHydrated || authLoading || loading) {
-    return (
+  // Memoize loading component to prevent re-renders
+  const LoadingComponent = useMemo(
+    () => (
       <Skeleton>
         <Breadcrumb pageName="Profile" />
         <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -104,7 +154,12 @@ const Profile = () => {
           </div>
         </div>
       </Skeleton>
-    );
+    ),
+    [],
+  );
+
+  if (authLoading || loading) {
+    return LoadingComponent;
   }
 
   if (!user) {
@@ -190,11 +245,11 @@ const Profile = () => {
           >
             <div className="relative flex drop-shadow-2">
               <ProfileImage
-                src={userProfile?.photoURL}
-                alt={`${userProfile?.name || "User"}'s profile`}
+                src={profileData?.profile?.photoURL}
+                alt={`${profileData?.profile?.name || "User"}'s profile`}
                 size={160}
                 className="rounded-3xl"
-                fallbackName={userProfile?.name || "User"}
+                fallbackName={profileData?.profile?.name || "User"}
                 priority
               />
             </div>
@@ -236,19 +291,19 @@ const Profile = () => {
               className="mb-1.5 text-2xl font-semibold text-black dark:text-white"
               suppressHydrationWarning
             >
-              {userProfile?.name || "User"}
+              {profileData?.profile?.name || "User"}
             </h3>
             <p className="font-medium" suppressHydrationWarning>
-              Occupation: {userProfile?.occupation || "Not specified"}
+              Occupation: {profileData?.profile?.occupation || "Not specified"}
             </p>
             <p className="font-medium" suppressHydrationWarning>
-              Phone Number: {userProfile?.phone || "Not provided"}
+              Phone Number: {profileData?.profile?.phone || "Not provided"}
             </p>
             <p
               className="text-sm font-medium text-gray-600 dark:text-gray-400"
               suppressHydrationWarning
             >
-              Email: {userProfile?.email || "Not provided"}
+              Email: {profileData?.profile?.email || "Not provided"}
             </p>
 
             <div
@@ -257,19 +312,19 @@ const Profile = () => {
             >
               <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
                 <span className="font-semibold text-black dark:text-white">
-                  {userStats.cardsReported}
+                  {profileData?.stats?.cardsReported || 0}
                 </span>
                 <span className="text-sm">Reported</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-strokedark xsm:flex-row">
                 <span className="font-semibold text-black dark:text-white">
-                  {userStats.cardsFound}
+                  {profileData?.stats?.cardsFound || 0}
                 </span>
                 <span className="text-sm">Found</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 px-4 xsm:flex-row">
                 <span className="font-semibold text-black dark:text-white">
-                  {userStats.rewardPoints}
+                  {profileData?.stats?.rewardPoints || 0}
                 </span>
                 <span className="text-sm">Rewards</span>
               </div>
@@ -280,7 +335,7 @@ const Profile = () => {
                 About Me
               </h4>
               <p className="mt-4.5" suppressHydrationWarning>
-                {userProfile?.bio || "No bio available."}
+                {profileData?.profile?.bio || "No bio available."}
               </p>
             </div>
 
@@ -289,9 +344,9 @@ const Profile = () => {
                 Follow me on
               </h4>
               <div className="flex items-center justify-center gap-3.5">
-                {userProfile?.socialLinks?.facebook && (
+                {profileData?.profile?.socialLinks?.facebook && (
                   <Link
-                    href={userProfile.socialLinks.facebook}
+                    href={profileData.profile.socialLinks.facebook}
                     className="hover:text-primary"
                     aria-label="facebook"
                     target="_blank"
@@ -320,9 +375,9 @@ const Profile = () => {
                   </Link>
                 )}
 
-                {userProfile?.socialLinks?.twitter && (
+                {profileData?.profile?.socialLinks?.twitter && (
                   <Link
-                    href={userProfile.socialLinks.twitter}
+                    href={profileData.profile.socialLinks.twitter}
                     className="hover:text-primary"
                     aria-label="twitter"
                     target="_blank"
@@ -356,9 +411,9 @@ const Profile = () => {
                   </Link>
                 )}
 
-                {userProfile?.socialLinks?.linkedin && (
+                {profileData?.profile?.socialLinks?.linkedin && (
                   <Link
-                    href={userProfile.socialLinks.linkedin}
+                    href={profileData.profile.socialLinks.linkedin}
                     className="hover:text-primary"
                     aria-label="linkedin"
                     target="_blank"
@@ -392,9 +447,9 @@ const Profile = () => {
                   </Link>
                 )}
 
-                {userProfile?.socialLinks?.dribbble && (
+                {profileData?.profile?.socialLinks?.dribbble && (
                   <Link
-                    href={userProfile.socialLinks.dribbble}
+                    href={profileData.profile.socialLinks.dribbble}
                     className="hover:text-primary"
                     aria-label="dribbble"
                     target="_blank"
@@ -423,9 +478,9 @@ const Profile = () => {
                   </Link>
                 )}
 
-                {userProfile?.socialLinks?.github && (
+                {profileData?.profile?.socialLinks?.github && (
                   <Link
-                    href={userProfile.socialLinks.github}
+                    href={profileData.profile.socialLinks.github}
                     className="hover:text-primary"
                     aria-label="github"
                     target="_blank"
@@ -460,8 +515,9 @@ const Profile = () => {
                 )}
 
                 {/* Show placeholder social icons if no social links are provided */}
-                {(!userProfile?.socialLinks ||
-                  Object.keys(userProfile.socialLinks).length === 0) && (
+                {(!profileData?.profile?.socialLinks ||
+                  Object.keys(profileData.profile.socialLinks).length ===
+                    0) && (
                   <>
                     <span className="text-sm text-gray-400 dark:text-gray-600">
                       No social links added
