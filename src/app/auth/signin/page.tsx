@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, {useState, } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
@@ -19,15 +19,13 @@ import {
 } from "firebase/auth";
 import { auth } from "@/app/lib/firebaseConfig";
 
-
 const SignIn: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setloginError]: any = useState(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
-  const [user, setUser] = useState(null);
 
-  const handleLogin = async (e: any) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       console.log("start");
@@ -36,7 +34,7 @@ const SignIn: React.FC = () => {
       router.push("/"); // Navigate to the home page
     } catch (error: any) {
       console.error("Error logging in:", error);
-      setloginError(error.message);
+      setLoginError(error.message);
 
       // Check for specific error codes
 
@@ -46,38 +44,39 @@ const SignIn: React.FC = () => {
         error.code === "auth/invalid-credential" ||
         error.code === "auth/invalid-email"
       ) {
-        alert("Incorrect email or password");
+        setLoginError("Incorrect email or password");
         console.log(error.code);
+      } else if (error.code === "auth/too-many-requests") {
+        setLoginError("Too many requests, try again later");
+      } else {
+        setLoginError(error.message);
       }
 
-      if (error.code === "auth/too-many-requests" ){
+      if (error.code === "auth/too-many-requests") {
         alert("Too many requests, try again later");
       }
-    } 
+    }
   };
 
-  const handleGoogleSignIn = async (e:any) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    setEmail('')
-    setPassword('')
+    setEmail("");
+    setPassword("");
     try {
-      const result: any = await signInWithPopup(getAuth(), provider);
+      const result: any = await signInWithPopup(auth, provider);
       const users = result.user;
       console.log("User signed in:", users);
-      setUser(users);
       router.push("/");
-      return user;
     } catch (error) {
       console.log("error", error);
     }
   };
 
-  const handleSignUp = (e:any) => {
+  const handleSignUp = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     router.push("/auth/signup");
   };
-   
+
   return (
     <>
       <Breadcrumb pageName="Sign In" />
@@ -103,7 +102,7 @@ const SignIn: React.FC = () => {
 
               <span className="mt-15 inline-block">
                 <svg
-                  width="350" 
+                  width="350"
                   height="350"
                   viewBox="0 0 350 350"
                   fill="none"
@@ -232,6 +231,12 @@ const SignIn: React.FC = () => {
                 Sign In to Identity
               </h2>
 
+              {loginError && (
+                <div className="mb-4 rounded border border-red-400 bg-red-100 p-3 text-red-700">
+                  {loginError}
+                </div>
+              )}
+
               <form onSubmit={handleLogin}>
                 <div className="mb-4">
                   <label className="mb-2.5 block font-medium text-black dark:text-white">
@@ -309,7 +314,11 @@ const SignIn: React.FC = () => {
                   />
                 </div>
 
-                <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50"
+                >
                   <span>
                     <svg
                       width="20"
@@ -343,14 +352,14 @@ const SignIn: React.FC = () => {
                       </defs>
                     </svg>
                   </span>
-                  <span onClick={handleGoogleSignIn} >Sign in with Google</span>
+                  Sign in with Google
                 </button>
 
                 <div className="mt-6 text-center">
-                <p>
+                  <p>
                     Don’t have any account?{" "}
                     <button onClick={handleSignUp} className="text-blue-500">
-                       Sign Up
+                      Sign Up
                     </button>
                   </p>
                 </div>
