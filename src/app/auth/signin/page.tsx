@@ -5,12 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { useRouter } from "next/navigation";
-// import { Metadata } from "next";
 
-// export const metadata = {
-//   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
-//   description: "This is Next.js Signin Page TailAdmin Dashboard Template",
-// };
+
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
