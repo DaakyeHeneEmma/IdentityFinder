@@ -1,16 +1,103 @@
+"use client";
+
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
 import { Metadata } from "next";
 import Link from "next/link";
 import Skeleton from "@/components/Layouts/Skeleton";
-
-export const metadata: Metadata = {
-  title: "Next.js Settings | TailAdmin - Next.js Dashboard Template",
-  description:
-    "This is Next.js Settings page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
-};
+import { useAuth } from "@/app/auth/AuthContext";
+import { useState, useEffect } from "react";
+import { updateProfile } from "firebase/auth";
+import { auth } from "@/app/lib/firebaseConfig";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import db from "@/app/lib/firestore";
 
 const Settings = () => {
+  const { user }: any = useAuth();
+  const [formData, setFormData] = useState({
+    displayName: "",
+    email: "",
+    phoneNumber: "",
+    bio: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const userData = userDoc.exists() ? userDoc.data() : {};
+
+          setFormData({
+            displayName: user.displayName || "",
+            email: user.email || "",
+            phoneNumber: userData.phoneNumber || user.phoneNumber || "",
+            bio: userData.bio || "",
+          });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setFormData({
+            displayName: user.displayName || "",
+            email: user.email || "",
+            phoneNumber: user.phoneNumber || "",
+            bio: "",
+          });
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      if (auth.currentUser && user) {
+        // Update display name in Firebase Auth
+        await updateProfile(auth.currentUser, {
+          displayName: formData.displayName,
+        });
+
+        // Save additional user data to Firestore
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            phoneNumber: formData.phoneNumber,
+            bio: formData.bio,
+            updatedAt: new Date(),
+          },
+          { merge: true },
+        );
+
+        setMessage("Profile updated successfully!");
+
+        // Redirect to profile page after successful update
+        setTimeout(() => {
+          window.location.href = "/profile";
+        }, 1500);
+      }
+    } catch (error) {
+      setMessage("Error updating profile. Please try again.");
+      console.error("Error updating profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Skeleton>
       <div className="mx-auto max-w-270">
@@ -25,7 +112,14 @@ const Settings = () => {
                 </h3>
               </div>
               <div className="p-7">
-                <form action="#">
+                {message && (
+                  <div
+                    className={`mb-4 rounded p-3 ${message.includes("success") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                  >
+                    {message}
+                  </div>
+                )}
+                <form onSubmit={handleUpdateProfile}>
                   <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                     <div className="w-full sm:w-1/2">
                       <label
@@ -63,10 +157,11 @@ const Settings = () => {
                         <input
                           className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                           type="text"
-                          name="fullName"
-                          id="fullName"
-                          placeholder="Devid Jhon"
-                          defaultValue="Devid Jhon"
+                          name="displayName"
+                          id="displayName"
+                          placeholder="Your name"
+                          value={formData.displayName}
+                          onChange={handleInputChange}
                         />
                       </div>
                     </div>
@@ -83,8 +178,9 @@ const Settings = () => {
                         type="text"
                         name="phoneNumber"
                         id="phoneNumber"
-                        placeholder="+990 3343 7865"
-                        defaultValue="+990 3343 7865"
+                        placeholder="Your phone number"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
                       />
                     </div>
                   </div>
@@ -125,14 +221,15 @@ const Settings = () => {
                       <input
                         className="w-full rounded border border-stroke bg-gray py-3 pl-11.5 pr-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                         type="email"
-                        name="emailAddress"
-                        id="emailAddress"
-                        placeholder="devidjond45@gmail.com"
-                        defaultValue="devidjond45@gmail.com"
+                        name="email"
+                        id="email"
+                        placeholder="Your email"
+                        value={formData.email}
+                        disabled
+                        readOnly
                       />
                     </div>
                   </div>
-
 
                   <div className="mb-5.5">
                     <label
@@ -179,7 +276,8 @@ const Settings = () => {
                         id="bio"
                         rows={6}
                         placeholder="Write your bio here"
-                        defaultValue="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque posuere fermentum urna, eu condimentum mauris tempus ut. Donec fermentum blandit aliquet."
+                        value={formData.bio}
+                        onChange={handleInputChange}
                       ></textarea>
                     </div>
                   </div>
@@ -187,17 +285,17 @@ const Settings = () => {
                   <div className="flex justify-end gap-4.5">
                     <button
                       className="flex justify-center rounded border border-stroke px-6 py-2 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
-                      type="submit"
+                      type="button"
+                      onClick={() => (window.location.href = "/profile")}
                     >
                       Cancel
                     </button>
                     <button
                       className="flex justify-center rounded bg-primary px-6 py-2 font-medium text-gray hover:bg-opacity-90"
                       type="submit"
+                      disabled={loading}
                     >
-                      <Link href={'/profile'} passHref>
-                        Update
-                      </Link>
+                      {loading ? "Updating..." : "Update"}
                     </button>
                   </div>
                 </form>
@@ -216,7 +314,7 @@ const Settings = () => {
                   <div className="mb-4 flex items-center gap-3">
                     <div className="h-14 w-14 rounded-full">
                       <Image
-                        src={"/images/user/user-03.png"}
+                        src={user?.photoURL || "/images/user/user-03.png"}
                         width={55}
                         height={55}
                         alt="User"
