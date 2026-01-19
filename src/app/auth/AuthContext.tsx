@@ -2,20 +2,37 @@
 
 import React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "../lib/firebaseConfig";
 
-const AuthContext = createContext({
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  getIdToken: () => Promise<string | null>;
+}
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  getIdToken: async () => null,
 });
 
-export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const getIdToken = async (): Promise<string | null> => {
+    if (!user) return null;
+    try {
+      return await user.getIdToken();
+    } catch (error) {
+      console.error("Error getting ID token:", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: any) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -23,7 +40,7 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, getIdToken }}>
       {children}
     </AuthContext.Provider>
   );

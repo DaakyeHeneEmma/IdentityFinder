@@ -12,6 +12,8 @@
     "@firebase/firestore": "^4.10.0",
     "@next/eslint-plugin-next": "^15.0.1",
     "apexcharts": "^3.45.2",
+    "baseline-browser-mapping": "^2.9.15",
+    "caniuse-lite": "^1.0.30001765",
     "firebase": "^12.8.0",
     "firebaseui": "^6.1.0",
     "flatpickr": "^4.6.13",
