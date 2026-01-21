@@ -41,7 +41,7 @@ const ReportCardTable = () => {
     };
 
     fetchReportCards();
-  }, [user]);
+  }, [user, getIdToken]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
