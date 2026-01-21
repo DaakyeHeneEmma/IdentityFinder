@@ -22,9 +22,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const getIdToken = async (): Promise<string | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.log("No user available for ID token");
+      return null;
+    }
     try {
-      return await user.getIdToken();
+      console.log("Getting ID token for user:", user.email);
+      const token = await user.getIdToken(true); // Force refresh
+      console.log("ID token retrieved successfully");
+      return token;
     } catch (error) {
       console.error("Error getting ID token:", error);
       return null;

@@ -88,6 +88,8 @@ const FormLayout = () => {
       return;
     }
 
+    console.log("Form submission - User authenticated:", user.email);
+
     const isValid = validateForm();
     if (!isValid) {
       return;
@@ -97,9 +99,14 @@ const FormLayout = () => {
     setSubmitMessage("");
 
     try {
+      console.log("Attempting to get ID token for user:", user?.email);
       const idToken = await getIdToken();
+      console.log("ID token result:", idToken ? "Success" : "Failed");
+
       if (!idToken) {
-        setSubmitMessage("Authentication required");
+        setSubmitMessage(
+          "Authentication failed. Please sign out and sign in again.",
+        );
         return;
       }
 
@@ -117,6 +124,7 @@ const FormLayout = () => {
       });
 
       const result = await response.json();
+      console.log("API response:", result);
 
       if (result.success) {
         setSubmitMessage("Report submitted successfully!");
@@ -130,7 +138,11 @@ const FormLayout = () => {
         });
         setSelectedOption("");
       } else {
-        setSubmitMessage(result.error || "Failed to submit report");
+        const errorMsg = result.details
+          ? `${result.error}: ${result.details}`
+          : result.error;
+        setSubmitMessage(errorMsg || "Failed to submit report");
+        console.error("Submission failed:", result);
       }
     } catch (error) {
       setSubmitMessage("An error occurred while submitting");
