@@ -131,7 +131,9 @@ const ReportCardTable = () => {
             </div>
             <div className="col-span-2 flex items-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {card.createdAt.toLocaleDateString()}
+                {card.createdAt instanceof Date
+                  ? card.createdAt.toLocaleDateString()
+                  : new Date(card.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>

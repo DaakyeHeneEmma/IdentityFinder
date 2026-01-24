@@ -28,11 +28,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     try {
       console.log("Getting ID token for user:", user.email);
+      console.log("User UID:", user.uid);
+      console.log("User is authenticated:", !user.isAnonymous);
+
       const token = await user.getIdToken(true); // Force refresh
-      console.log("ID token retrieved successfully");
+      console.log("ID token retrieved successfully, length:", token.length);
+      console.log("Token starts with:", token.substring(0, 20));
       return token;
     } catch (error) {
       console.error("Error getting ID token:", error);
+      console.error("Error code:", (error as any).code);
+      console.error("Error message:", (error as any).message);
       return null;
     }
   };

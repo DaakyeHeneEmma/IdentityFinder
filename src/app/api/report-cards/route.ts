@@ -1,36 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  getFirestore,
-  connectFirestoreEmulator,
-} from "firebase/firestore";
-import { initializeApp } from "firebase/app";
 import { ReportCardSubmission, ReportCardResponse } from "@/types/reportCard";
 import { getUserFromRequest } from "@/app/lib/auth";
-
-// Initialize Firebase on server side using same config as client
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import dbConnect from "@/app/lib/database_mongo/mongodb";
+import { ReportCard } from "@/app/lib/database_mongo/models/ReportCard";
 
 export async function POST(request: NextRequest) {
-   console.log("POST /api/report-cards - Starting request");
+  console.log("POST /api/report-cards - Starting request");
   try {
     console.log("POST /api/report-cards - Starting request");
 
@@ -56,18 +31,23 @@ export async function POST(request: NextRequest) {
     const { fullName, phone, email, idType, idDescription, fileDescription } =
       body;
 
-    if (!fullName || !phone || !email || !idType || !idDescription) {
-      console.log("Missing required fields:", {
-        fullName,
-        phone,
-        email,
-        idType,
-        idDescription,
-      });
+    // Enhanced validation with specific field checking
+    const requiredFields = [
+      "fullName",
+      "phone",
+      "email",
+      "idType",
+      "idDescription",
+    ];
+    const missingFields = requiredFields.filter((field) => !body[field]);
+
+    if (missingFields.length > 0) {
+      console.log("Missing required fields:", missingFields);
       return NextResponse.json(
         {
           success: false,
           error: "Missing required fields",
+          details: `Missing: ${missingFields.join(", ")}`,
         },
         { status: 400 },
       );
@@ -82,28 +62,110 @@ export async function POST(request: NextRequest) {
       idDescription,
       fileDescription: fileDescription || null,
       status: "lost",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
     };
 
-    console.log("Attempting to add document to Firestore...");
-    const docRef = await addDoc(collection(db, "reportCards"), reportCardData);
-    console.log("Document added successfully with ID:", docRef.id);
+    // Database operation with specific error handling
+    try {
+      // Connect to MongoDB
+      await dbConnect();
+      console.log("Attempting to save document to MongoDB...");
 
-    return NextResponse.json({
-      success: true,
-      data: { id: docRef.id, ...reportCardData },
-    });
-  } catch (error) {
-    console.error("Error creating report card:", error);
+      const newReportCard = new ReportCard(reportCardData);
+      const savedCard = await newReportCard.save();
+
+      console.log("Document saved successfully with ID:", savedCard._id);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: savedCard._id.toString(),
+          ...savedCard.toObject(),
+        },
+      });
+    } catch (dbError: any) {
+      console.error("Database error:", dbError);
+
+      // Handle specific MongoDB errors
+      if (dbError.code === 11000) {
+        return NextResponse.json(
+          { success: false, error: "Duplicate record found." },
+          { status: 409 },
+        );
+      }
+
+      if (dbError.name === "ValidationError") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Validation error",
+            details: Object.values(dbError.errors)
+              .map((e: any) => e.message)
+              .join(", "),
+          },
+          { status: 400 },
+        );
+      }
+
+      if (
+        dbError.name === "MongoNetworkError" ||
+        dbError.name === "MongoTimeoutError"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Database connection failed. Please try again later.",
+          },
+          { status: 503 },
+        );
+      }
+
+      // Generic database error
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to save data to database",
+          details: dbError.message || "Unknown database error",
+        },
+        { status: 500 },
+      );
+    }
+  } catch (error: any) {
+    console.error("Request error:", error);
+
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError && error.message.includes("JSON")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request format. Please check your data.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Handle authentication errors specifically
+    if (
+      error.message?.includes("authentication") ||
+      error.code === "auth/user-not-found"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication failed. Please sign in again.",
+        },
+        { status: 401 },
+      );
+    }
+
+    // Generic error fallback
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create report card submission",
-        details: errorMessage,
+        error: "Internal server error",
+        details:
+          process.env.NODE_ENV === "development" ? errorMessage : undefined,
       },
       { status: 500 },
     );
@@ -118,50 +180,94 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Authentication required",
+          error: "Authentication required. Please sign in again.",
         },
         { status: 401 },
       );
     }
 
-    const reportCardsQuery = query(
-      collection(db, "reportCards"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc"),
-    );
+    // Database operation with specific error handling
+    try {
+      // Connect to MongoDB
+      await dbConnect();
+      console.log("Fetching report cards from MongoDB for user:", user.uid);
 
-    const querySnapshot = await getDocs(reportCardsQuery);
-    const reportCards: ReportCardSubmission[] = [];
+      const reportCards = await ReportCard.find({ userId: user.uid })
+        .sort({ createdAt: -1 })
+        .lean();
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      reportCards.push({
-        id: doc.id,
-        userId: data.userId,
-        fullName: data.fullName,
-        phone: data.phone,
-        email: data.email,
-        idType: data.idType,
-        idDescription: data.idDescription,
-        fileDescription: data.fileDescription,
-        status: data.status,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
+      const formattedReportCards: ReportCardSubmission[] = reportCards.map(
+        (card: any) => ({
+          id: card._id.toString(),
+          userId: card.userId,
+          fullName: card.fullName,
+          phone: card.phone,
+          email: card.email,
+          idType: card.idType,
+          idDescription: card.idDescription,
+          fileDescription: card.fileDescription,
+          status: card.status,
+          createdAt: new Date(card.createdAt),
+          updatedAt: new Date(card.updatedAt),
+        }),
+      );
+
+      return NextResponse.json({
+        success: true,
+        data: formattedReportCards,
       });
-    });
+    } catch (dbError: any) {
+      console.error("Database error during fetch:", dbError);
 
-    return NextResponse.json({
-      success: true,
-      data: reportCards,
-    });
-  } catch (error) {
-    console.error("Error fetching report cards:", error);
+      // Handle specific MongoDB errors
+      if (
+        dbError.name === "MongoNetworkError" ||
+        dbError.name === "MongoTimeoutError"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Service temporarily unavailable. Please try again later.",
+          },
+          { status: 503 },
+        );
+      }
+
+      // Return empty array for fetch errors instead of crashing
+      return NextResponse.json(
+        {
+          success: true,
+          data: [],
+          warning: "Unable to fetch latest data. Please try again later.",
+        },
+        { status: 200 },
+      );
+    }
+  } catch (error: any) {
+    console.error("Request error during GET:", error);
+
+    // Handle authentication errors specifically
+    if (
+      error.message?.includes("authentication") ||
+      error.code === "auth/user-not-found"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Authentication failed. Please sign in again.",
+        },
+        { status: 401 },
+      );
+    }
+
+    // Generic error fallback - return empty data instead of error
     return NextResponse.json(
       {
-        success: false,
-        error: "Failed to fetch report cards",
+        success: true,
+        data: [],
+        warning: "Unable to fetch data at this time.",
       },
-      { status: 500 },
+      { status: 200 },
     );
   }
 }
