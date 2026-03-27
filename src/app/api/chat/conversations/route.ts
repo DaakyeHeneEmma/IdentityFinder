@@ -4,6 +4,8 @@ import dbConnect from "@/app/lib/database_mongo/mongodb";
 import { Conversation } from "@/app/lib/database_mongo/models/Conversation";
 import { Message } from "@/app/lib/database_mongo/models/Message";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -29,9 +31,16 @@ export async function GET(request: NextRequest) {
           (p: string) => p !== user.uid
         );
 
-        const lastMessage = conv.lastMessageId
+        const lastMessageRaw = conv.lastMessageId
           ? await Message.findById(conv.lastMessageId).lean()
           : null;
+        
+        const lastMessage = lastMessageRaw && !Array.isArray(lastMessageRaw) ? {
+          id: String(lastMessageRaw._id),
+          content: lastMessageRaw.content,
+          timestamp: lastMessageRaw.createdAt,
+          senderId: lastMessageRaw.senderId,
+        } : null;
 
         const messages = await Message.find({
           conversationId: conv._id.toString(),
@@ -44,14 +53,7 @@ export async function GET(request: NextRequest) {
         return {
           id: conv._id.toString(),
           participantId: otherParticipantId,
-          lastMessage: lastMessage
-            ? {
-                id: lastMessage._id.toString(),
-                content: lastMessage.content,
-                timestamp: lastMessage.createdAt,
-                senderId: lastMessage.senderId,
-              }
-            : null,
+          lastMessage,
           unreadCount,
           createdAt: conv.createdAt,
           updatedAt: conv.updatedAt,

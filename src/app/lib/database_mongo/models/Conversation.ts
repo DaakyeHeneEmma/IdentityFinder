@@ -13,7 +13,6 @@ const ConversationSchema: Schema = new Schema(
     participants: {
       type: [String],
       required: true,
-      index: true,
     },
     lastMessageId: {
       type: String,

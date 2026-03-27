@@ -5,6 +5,8 @@ import { ReportCard } from "@/app/lib/database_mongo/models/ReportCard";
 import { FoundCard } from "@/app/lib/database_mongo/models/FoundCard";
 import { Conversation } from "@/app/lib/database_mongo/models/Conversation";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);

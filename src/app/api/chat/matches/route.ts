@@ -5,6 +5,8 @@ import { ChatMatch } from "@/app/lib/database_mongo/models/ChatMatch";
 import { ReportCard } from "@/app/lib/database_mongo/models/ReportCard";
 import { FoundCard } from "@/app/lib/database_mongo/models/FoundCard";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -83,11 +85,13 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    let report;
+    let report: any;
     if (reportType === "lost") {
-      report = await ReportCard.findById(reportId).lean();
+      const found = await ReportCard.findById(reportId).lean();
+      report = found;
     } else {
-      report = await FoundCard.findById(reportId).lean();
+      const found = await FoundCard.findById(reportId).lean();
+      report = found;
     }
 
     if (!report) {
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const newMatches = [];
 
-    for (const match of potentialMatches) {
+    for (const match of potentialMatches as any[]) {
       const existingMatch = await ChatMatch.findOne({
         reporterId: user.uid,
         matchedUserId: match.userId,
