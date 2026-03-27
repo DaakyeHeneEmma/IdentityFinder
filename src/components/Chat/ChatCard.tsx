@@ -285,7 +285,7 @@ const ChatCard = () => {
     ? browseReports.filter((r) => r.idType === filterType)
     : browseReports;
 
-  const uniqueIdTypes = [...new Set(browseReports.map((r) => r.idType))];
+  const uniqueIdTypes = Array.from(new Set(browseReports.map((r) => r.idType)));
 
   if (!user) {
     return (

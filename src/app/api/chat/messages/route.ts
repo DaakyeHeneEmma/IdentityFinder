@@ -3,6 +3,8 @@ import { getUserFromRequest } from "@/app/lib/auth";
 import dbConnect from "@/app/lib/database_mongo/mongodb";
 import { Message } from "@/app/lib/database_mongo/models/Message";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
