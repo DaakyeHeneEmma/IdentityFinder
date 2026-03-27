@@ -34,6 +34,8 @@ interface BrowseReport {
   hasConversation?: boolean;
 }
 
+const POLL_INTERVAL = 3000; // 3 seconds
+
 const ChatCard = () => {
   const { user, getIdToken } = useAuth();
   const [activeTab, setActiveTab] = useState<"browse" | "chats">("browse");
@@ -45,7 +47,11 @@ const ChatCard = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [filterType, setFilterType] = useState<string>("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -59,14 +65,35 @@ const ChatCard = () => {
   useEffect(() => {
     if (selectedChat) {
       fetchMessages(selectedChat);
+      startPolling();
+    } else {
+      stopPolling();
     }
-  }, [selectedChat]);
+    return () => stopPolling();
+  }, [selectedChat, user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const fetchConversations = async () => {
+  const startPolling = () => {
+    stopPolling();
+    pollIntervalRef.current = setInterval(() => {
+      if (selectedChat) {
+        fetchMessages(selectedChat, true);
+      }
+      fetchConversations(true);
+    }, POLL_INTERVAL);
+  };
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  const fetchConversations = async (silent = false) => {
     if (!user) return;
 
     try {
@@ -102,7 +129,7 @@ const ChatCard = () => {
     } catch (error) {
       console.error("Error fetching conversations:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -124,7 +151,7 @@ const ChatCard = () => {
     }
   };
 
-  const fetchMessages = async (conversationId: string) => {
+  const fetchMessages = async (conversationId: string, silent = false) => {
     if (!user) return;
 
     try {
@@ -137,6 +164,11 @@ const ChatCard = () => {
 
       if (result.success) {
         setMessages(result.data);
+        
+        if (result.typing) {
+          setPartnerTyping(true);
+          setTimeout(() => setPartnerTyping(false), 3000);
+        }
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -184,6 +216,7 @@ const ChatCard = () => {
 
     try {
       setSending(true);
+      setIsTyping(false);
       const idToken = await getIdToken();
 
       const response = await fetch("/api/chat/messages", {
@@ -211,6 +244,41 @@ const ChatCard = () => {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleTyping = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+
+    if (!selectedChat || !user) return;
+
+    if (e.target.value && !isTyping) {
+      setIsTyping(true);
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(async () => {
+      setIsTyping(false);
+      
+      const conversation = conversations.find((c) => c.id === selectedChat);
+      if (conversation && user) {
+        const idToken = await getIdToken();
+        await fetch("/api/chat/typing", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            conversationId: selectedChat,
+            receiverId: conversation.participantId,
+            typing: false,
+          }),
+        });
+      }
+    }, 2000);
   };
 
   const filteredReports = filterType
@@ -295,30 +363,43 @@ const ChatCard = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !partnerTyping ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-gray-400 text-sm">No messages yet. Start the conversation!</p>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isOwn ? "justify-end" : "justify-start"}`}
-                >
+              <>
+                {messages.map((msg) => (
                   <div
-                    className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                      msg.isOwn
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 text-black dark:bg-meta-4 dark:text-white"
-                    }`}
+                    key={msg.id}
+                    className={`flex ${msg.isOwn ? "justify-end" : "justify-start"}`}
                   >
-                    <p>{msg.content}</p>
-                    <p className={`mt-1 text-xs ${msg.isOwn ? "text-white/70" : "text-gray-500"}`}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
+                    <div
+                      className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                        msg.isOwn
+                          ? "bg-primary text-white"
+                          : "bg-gray-100 text-black dark:bg-meta-4 dark:text-white"
+                      }`}
+                    >
+                      <p>{msg.content}</p>
+                      <p className={`mt-1 text-xs ${msg.isOwn ? "text-white/70" : "text-gray-500"}`}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {partnerTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 dark:bg-meta-4 rounded-lg px-4 py-2">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -327,7 +408,7 @@ const ChatCard = () => {
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleTyping}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Type a message..."
               className="flex-1 rounded border border-stroke bg-transparent px-3 py-2 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-form-input"
