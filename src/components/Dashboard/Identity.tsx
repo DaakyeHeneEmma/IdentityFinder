@@ -4,6 +4,7 @@ import React from "react";
 import ChatCard from "../Chat/ChatCard";
 import IdentificationTable from "../Tables/IDTable";
 import ReportCardTable from "../Tables/ReportCardTable";
+import FoundCardTable from "../Tables/FoundCardTable";
 import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
 
@@ -91,6 +92,7 @@ const Identity: React.FC = () => {
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
         <div className="col-span-12 space-y-6 xl:col-span-8">
           <ReportCardTable />
+          <FoundCardTable />
           <IdentificationTable />
         </div>
         <ChatCard />
